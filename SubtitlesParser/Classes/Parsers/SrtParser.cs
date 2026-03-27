@@ -21,27 +21,17 @@ namespace SubtitlesParser.Classes.Parsers;
 /// </summary>
 public sealed class SrtParser : ISubtitlesParser
 {
-
-    // Properties -----------------------------------------------------------------------
-
-    private readonly string[] _delimiters = { "-->", "- >", "->" };
-
-
-    // Constructors --------------------------------------------------------------------
+    private readonly string[] _delimiters = ["-->", "- >", "->"];
 
     public SrtParser() { }
-
-
-    // Methods -------------------------------------------------------------------------
 
     public List<SubtitleItem> ParseStream(Stream srtStream, Encoding encoding)
     {
         // test if stream if readable and seekable (just a check, should be good)
         if (!srtStream.CanRead || !srtStream.CanSeek)
         {
-            var message = string.Format("Stream must be seekable and readable in a subtitles parser. " +
-                                        "Operation interrupted; isSeekable: {0} - isReadable: {1}",
-                                        srtStream.CanSeek, srtStream.CanSeek);
+            var message = "Stream must be seekable and readable in a subtitles parser. " +
+                $"Operation interrupted; isSeekable: {srtStream.CanSeek} - isReadable: {srtStream.CanSeek}";
             throw new ArgumentException(message);
         }
 

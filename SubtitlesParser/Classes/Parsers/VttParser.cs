@@ -22,52 +22,25 @@ namespace SubtitlesParser.Classes.Parsers;
 /// 00:00:15.000 --> 00:00:18.000
 /// At the left we can see...
 /// </summary>
-public sealed class VttParser : ISubtitlesParser
+public sealed partial class VttParser : ISubtitlesParser
 {
-    private static readonly Regex _rxLongTimestamp = new Regex("(?<H>[0-9]+):(?<M>[0-9]+):(?<S>[0-9]+)[,\\.](?<m>[0-9]+)", RegexOptions.Compiled);
-    private static readonly Regex _rxShortTimestamp = new Regex("(?<M>[0-9]+):(?<S>[0-9]+)[,\\.](?<m>[0-9]+)", RegexOptions.Compiled);
-
-
-    // Properties -----------------------------------------------------------------------
-
-    private readonly string[] _delimiters = new string[] { "-->", "- >", "->" };
-
-
-    // Constructors --------------------------------------------------------------------
+    private readonly string[] _delimiters = ["-->", "- >", "->"];
 
     public VttParser() { }
 
-    // Methods -------------------------------------------------------------------------
-
-    public List<SubtitleItem> ParseStream(Stream vttStream, Encoding encoding)
+    public List<SubtitleItem> ParseStream(TextReader vttStream, Encoding encoding)
     {
-        // test if stream if readable and seekable (just a check, should be good)
-        if (!vttStream.CanRead || !vttStream.CanSeek)
-        {
-            var message = string.Format("Stream must be seekable and readable in a subtitles parser. " +
-                               "Operation interrupted; isSeekable: {0} - isReadable: {1}",
-                               vttStream.CanSeek, vttStream.CanSeek);
-            throw new ArgumentException(message);
-        }
-
-        // seek the beginning of the stream
-        vttStream.Position = 0;
-
-        var reader = new StreamReader(vttStream, encoding, detectEncodingFromByteOrderMarks: true);
-
         var items = new List<SubtitleItem>();
-        var vttSubParts = GetVttSubTitleParts(reader).GetEnumerator();
+        using var vttSubParts = GetVttSubTitleParts(vttStream).GetEnumerator();
         if (false == vttSubParts.MoveNext())
-        {
             throw new FormatException("Parsing as VTT returned no VTT part.");
-        }
 
         do
         {
             var lines = vttSubParts.Current
-                .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
-                .Select(s => s.Trim())
-                .Where(l => !string.IsNullOrEmpty(l));
+                .Split([Environment.NewLine], StringSplitOptions.None)
+                .Select(static s => s.Trim())
+                .Where(static l => !string.IsNullOrEmpty(l));
 
             var item = new SubtitleItem();
             foreach (var line in lines)
@@ -100,35 +73,19 @@ public sealed class VttParser : ISubtitlesParser
         return items;
     }
 
-    public async Task<List<SubtitleItem>> ParseStreamAsync(Stream vttStream, Encoding encoding)
+    public async Task<List<SubtitleItem>> ParseStreamAsync(TextReader vttStream, Encoding encoding)
     {
-        // test if stream if readable and seekable (just a check, should be good)
-        if (!vttStream.CanRead || !vttStream.CanSeek)
-        {
-            var message = string.Format("Stream must be seekable and readable in a subtitles parser. " +
-                               "Operation interrupted; isSeekable: {0} - isReadable: {1}",
-                               vttStream.CanSeek, vttStream.CanSeek);
-            throw new ArgumentException(message);
-        }
-
-        // seek the beginning of the stream
-        vttStream.Position = 0;
-
-        var reader = new StreamReader(vttStream, encoding, detectEncodingFromByteOrderMarks: true);
-
         var items = new List<SubtitleItem>();
-        var vttBlockEnumerator = GetVttSubTitlePartsAsync(reader).GetAsyncEnumerator();
+        await using var vttBlockEnumerator = GetVttSubTitlePartsAsync(vttStream).GetAsyncEnumerator();
         if (await vttBlockEnumerator.MoveNextAsync() == false)
-        {
             throw new FormatException("Parsing as VTT returned no VTT part.");
-        }
 
         do
         {
             var lines = vttBlockEnumerator.Current
-                .Split(new string[] { Environment.NewLine }, StringSplitOptions.None)
-                .Select(s => s.Trim())
-                .Where(l => !string.IsNullOrEmpty(l));
+                .Split([Environment.NewLine], StringSplitOptions.None)
+                .Select(static s => s.Trim())
+                .Where(static l => !string.IsNullOrEmpty(l));
 
             var item = new SubtitleItem();
             foreach (var line in lines)
@@ -173,12 +130,11 @@ public sealed class VttParser : ISubtitlesParser
     /// </summary>
     /// <param name="reader">The textreader associated with the vtt file</param>
     /// <returns>An IEnumerable(string) object containing all the subtitle parts</returns>
-    private IEnumerable<string> GetVttSubTitleParts(TextReader reader)
+    private static IEnumerable<string> GetVttSubTitleParts(TextReader reader)
     {
-        string line;
         var sb = new StringBuilder();
 
-        while ((line = reader.ReadLine()) != null)
+        while (reader.ReadLine() is string line)
         {
             if (string.IsNullOrEmpty(line.Trim()))
             {
@@ -202,12 +158,11 @@ public sealed class VttParser : ISubtitlesParser
         }
     }
 
-    private async IAsyncEnumerable<string> GetVttSubTitlePartsAsync(TextReader reader)
+    private static async IAsyncEnumerable<string> GetVttSubTitlePartsAsync(TextReader reader)
     {
-        string line;
         var sb = new StringBuilder();
 
-        while ((line = await reader.ReadLineAsync()) != null)
+        while (await reader.ReadLineAsync() is string line)
         {
             if (string.IsNullOrEmpty(line.Trim()))
             {
@@ -257,13 +212,13 @@ public sealed class VttParser : ISubtitlesParser
     /// </summary>
     /// <param name="s">The timecode to parse</param>
     /// <returns>The parsed timecode as a TimeSpan instance. If the parsing was unsuccessful, -1 is returned (subtitles should never show)</returns>
-    private int ParseVttTimecode(string s)
+    private static int ParseVttTimecode(string s)
     {
         int hours = 0;
         int minutes = 0;
         int seconds = 0;
         int milliseconds = -1;
-        var match = _rxLongTimestamp.Match(s);
+        var match = LongTimestampRx().Match(s);
         if (match.Success)
         {
             hours = int.Parse(match.Groups["H"].Value);
@@ -273,7 +228,7 @@ public sealed class VttParser : ISubtitlesParser
         }
         else
         {
-            match = _rxShortTimestamp.Match(s);
+            match = ShortTimestampRx().Match(s);
             if (match.Success)
             {
                 minutes = int.Parse(match.Groups["M"].Value);
@@ -291,4 +246,11 @@ public sealed class VttParser : ISubtitlesParser
 
         return -1;
     }
+
+    // cambierei in regex per WebvttTimestap e non standard timestamp
+    [GeneratedRegex("(?<H>[0-9]+):(?<M>[0-9]+):(?<S>[0-9]+)[,\\.](?<m>[0-9]+)", RegexOptions.Compiled)]
+    private static partial Regex LongTimestampRx();
+
+    [GeneratedRegex("(?<M>[0-9]+):(?<S>[0-9]+)[,\\.](?<m>[0-9]+)", RegexOptions.Compiled)]
+    private static partial Regex ShortTimestampRx();
 }
