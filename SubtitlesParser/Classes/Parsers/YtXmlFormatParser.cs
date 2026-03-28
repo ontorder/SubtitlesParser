@@ -37,8 +37,8 @@ public sealed class YtXmlFormatParser : IXmlFormatSubtitlesParser
 
                         items.Add(new SubtitleItem()
                         {
-                            StartTime = (int)(start * 1000),
-                            EndTime = (int)((start + duration) * 1000),
+                            StartTime = TimeSpan.FromMilliseconds(start * 1000),
+                            EndTime = TimeSpan.FromMilliseconds((start + duration) * 1000),
                             Lines = [text]
                         });
                     }

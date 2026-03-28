@@ -9,6 +9,8 @@ namespace SubtitlesParser.Classes.Parsers;
 
 public sealed class TtmlParser : IXmlFormatSubtitlesParser
 {
+    private const int NetflixTicksToMilliseconds = 10_000;
+
     public List<SubtitleItem> ParseStream(Stream xmlStream, Encoding encoding)
     {
         var items = new List<SubtitleItem>();
@@ -36,8 +38,8 @@ public sealed class TtmlParser : IXmlFormatSubtitlesParser
 
                 items.Add(new SubtitleItem()
                 {
-                    StartTime = (int)(startTicks),
-                    EndTime = (int)(endTicks),
+                    StartTime = startTicks,
+                    EndTime = endTicks,
                     Lines = [text]
                 });
             }
@@ -60,19 +62,17 @@ public sealed class TtmlParser : IXmlFormatSubtitlesParser
     /// </summary>
     /// <param name="s">The timecode to parse</param>
     /// <returns>The parsed timecode as a TimeSpan instance. If the parsing was unsuccessful, -1 is returned (subtitles should never show)</returns>
-    private static long ParseTimecode(string s)
+    private static TimeSpan ParseTimecode(string s)
     {
-        TimeSpan result;
-        if (TimeSpan.TryParse(s, out result))
+        if (TimeSpan.TryParse(s, out TimeSpan result))
         {
-            return (long)result.TotalMilliseconds;
+            return result;
         }
         // Netflix subtitles have a weird format: timecodes are specified as ticks. Ex: begin="79249170t"
-        long ticks;
-        if (long.TryParse(s.TrimEnd('t'), out ticks))
+        if (long.TryParse(s.TrimEnd('t'), out long ticks))
         {
-            return ticks / 10000;
+            return TimeSpan.FromMilliseconds(ticks / NetflixTicksToMilliseconds);
         }
-        return -1;
+        return TimeSpan.MaxValue;
     }
 }

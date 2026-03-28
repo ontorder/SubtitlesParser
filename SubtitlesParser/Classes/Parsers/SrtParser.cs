@@ -44,12 +44,10 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
                 var tempPlainLines = new List<string>();
                 foreach (var line in lines)
                 {
-                    if (item.StartTime == 0 && item.EndTime == 0)
+                    if (item.StartTime == TimeSpan.Zero && item.EndTime == TimeSpan.Zero)
                     {
                         // we look for the timecodes first
-                        int startTc;
-                        int endTc;
-                        var success = TryParseTimecodeLine(line, out startTc, out endTc);
+                        var success = TryParseTimecodeLine(line, out var startTc, out var endTc);
                         if (success)
                         {
                             item.StartTime = startTc;
@@ -65,7 +63,7 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
                     }
                 }
 
-                if ((item.StartTime != 0 || item.EndTime != 0) && item.Lines.Any())
+                if ((item.StartTime != TimeSpan.MaxValue || item.EndTime != TimeSpan.MaxValue) && item.Lines.Any())
                 {
                     // parsing succeeded
                     item.Lines = [.. lines];
@@ -129,14 +127,14 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
         }
     }
 
-    private bool TryParseTimecodeLine(string line, out int startTc, out int endTc)
+    private bool TryParseTimecodeLine(string line, out TimeSpan startTc, out TimeSpan endTc)
     {
         var parts = line.Split(_delimiters, StringSplitOptions.None);
         if (parts.Length != 2)
         {
             // this is not a timecode line
-            startTc = -1;
-            endTc = -1;
+            startTc = TimeSpan.MaxValue;
+            endTc = TimeSpan.MaxValue;
             return false;
         }
         else
@@ -148,25 +146,21 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
     }
 
     /// <summary>
-    /// Takes an SRT timecode as a string and parses it into a double (in seconds). A SRT timecode reads as follows: 
+    /// Takes an SRT timecode as a string and parses it into a double (in seconds). A SRT timecode reads as follows:
     /// 00:00:20,000
     /// </summary>
     /// <param name="s">The timecode to parse</param>
     /// <returns>The parsed timecode as a TimeSpan instance. If the parsing was unsuccessful, -1 is returned (subtitles should never show)</returns>
-    private static int ParseSrtTimecode(string s)
+    private static TimeSpan ParseSrtTimecode(string s)
     {
         var match = Regex.Match(s, "[0-9]+:[0-9]+:[0-9]+([,\\.][0-9]+)?");
         if (match.Success)
         {
-            s = match.Value;
-            TimeSpan result;
-            if (TimeSpan.TryParse(s.Replace(',', '.'), out result))
+            if (TimeSpan.TryParse(match.Value.Replace(',', '.'), out TimeSpan result))
             {
-                var nbOfMs = (int)result.TotalMilliseconds;
-                return nbOfMs;
+                return result;
             }
         }
-        return -1;
+        return TimeSpan.MaxValue;
     }
-
 }

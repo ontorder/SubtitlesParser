@@ -66,7 +66,7 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
                         var start = timeCodes.Item1;
                         var end = timeCodes.Item2;
 
-                        if (start > 0 && end > 0 && textLines.Any())
+                        if (start < TimeSpan.MaxValue && end < TimeSpan.MaxValue && textLines.Any())
                         {
                             items.Add(new SubtitleItem()
                             {
@@ -91,7 +91,7 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
                 var lastTimeCodes = ParseTimecodeLine(timeCodeLine);
                 var lastStart = lastTimeCodes.Item1;
                 var lastEnd = lastTimeCodes.Item2;
-                if (lastStart > 0 && lastEnd > 0 && textLines.Any())
+                if (lastStart < TimeSpan.MaxValue && lastEnd < TimeSpan.MaxValue && textLines.Any())
                 {
                     items.Add(new SubtitleItem()
                     {
@@ -123,14 +123,14 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
         }
     }
 
-    private Tuple<int, int> ParseTimecodeLine(string line)
+    private static (TimeSpan, TimeSpan) ParseTimecodeLine(string line)
     {
         var parts = line.Split(TimecodeSeparator);
         if (parts.Length == 2)
         {
             var start = ParseTimecode(parts[0]);
             var end = ParseTimecode(parts[1]);
-            return new Tuple<int, int>(start, end);
+            return (start, end);
         }
         else
         {
@@ -140,23 +140,20 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
     }
 
     /// <summary>
-    /// Takes an SRT timecode as a string and parses it into a double (in seconds). A SRT timecode reads as follows: 
+    /// Takes an SRT timecode as a string and parses it into a double (in seconds). A SRT timecode reads as follows:
     /// 00:00:20,000
     /// </summary>
     /// <param name="s">The timecode to parse</param>
     /// <returns>The parsed timecode as a TimeSpan instance. If the parsing was unsuccessful, -1 is returned (subtitles should never show)</returns>
-    private int ParseTimecode(string s)
+    private static TimeSpan ParseTimecode(string s)
     {
-        TimeSpan result;
-
-        if (TimeSpan.TryParse(s, out result))
+        if (TimeSpan.TryParse(s, out TimeSpan result))
         {
-            var nbOfMs = (int)result.TotalMilliseconds;
-            return nbOfMs;
+            return result;
         }
         else
         {
-            return -1;
+            return TimeSpan.MaxValue;
         }
     }
 

@@ -32,9 +32,7 @@ public sealed class SrtWriter : ISubtitlesWriter
         // take the start and end timestamps and format it as a timecode line
         string formatTimecodeLine()
         {
-            TimeSpan start = TimeSpan.FromMilliseconds(subtitleItem.StartTime);
-            TimeSpan end = TimeSpan.FromMilliseconds(subtitleItem.EndTime);
-            return $"{start:hh\\:mm\\:ss\\,fff} --> {end:hh\\:mm\\:ss\\,fff}";
+            return $"{subtitleItem.StartTime:hh\\:mm\\:ss\\,fff} --> {subtitleItem.EndTime:hh\\:mm\\:ss\\,fff}";
         }
 
         List<string> lines = [subtitleEntryNumber.ToString(), formatTimecodeLine()];

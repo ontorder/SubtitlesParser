@@ -128,16 +128,15 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
             var item = new SubtitleItem
             {
                 Lines = nonEmptyLines,
-                StartTime = start,
-                EndTime = end
+                StartTime = TimeSpan.FromMilliseconds(start),
+                EndTime = TimeSpan.FromMilliseconds(end)
             };
 
             return item;
         }
         else
         {
-            var message = string.Format("The subtitle file line {0} is " +
-                                        "not in the micro dvd format. We stop the process.", line);
+            var message = $"The subtitle file line {line} is not in the micro dvd format. We stop the process.";
             throw new InvalidDataException(message);
         }
     }
@@ -166,5 +165,4 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
             return false;
         }
     }
-
 }

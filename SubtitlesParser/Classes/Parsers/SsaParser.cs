@@ -91,7 +91,7 @@ public sealed class SsaParser : ITextFormatSubtitlesParser
                             var start = ParseSsaTimecode(startText);
                             var end = ParseSsaTimecode(endText);
 
-                            if (start > 0 && end > 0 && !string.IsNullOrEmpty(textLine))
+                            if (start < TimeSpan.MaxValue && end < TimeSpan.MaxValue && !string.IsNullOrEmpty(textLine))
                             {
                                 List<string> lines;
                                 switch (wrapStyle)
@@ -102,14 +102,14 @@ public sealed class SsaParser : ITextFormatSubtitlesParser
                                         // according to the spec doc:
                                         // `\n` is ignored by SSA if smart-wrapping (and therefore smart with wider lower line) is enabled
                                         // end-of-line word wrapping: only `\N` breaks
-                                        lines = textLine.Split(@"\N").ToList();
+                                        lines = [.. textLine.Split(@"\N")];
                                         break;
                                     case SsaWrapStyle.None:
                                         // the default value of the variable is None, which breaks on either `\n` or `\N`
 
                                         // according to the spec doc:
                                         // no word wrapping: `\n` `\N` both breaks
-                                        lines = Regex.Split(textLine, @"(?:\\n)|(?:\\N)").ToList(); // regex because there isn't an overload to take an array of strings to split on
+                                        lines = [.. Regex.Split(textLine, @"(?:\\n)|(?:\\N)")]; // regex because there isn't an overload to take an array of strings to split on
                                         break;
                                     default:
                                         throw new ArgumentOutOfRangeException();
@@ -117,13 +117,13 @@ public sealed class SsaParser : ITextFormatSubtitlesParser
 
                                 // trim any spaces from the start of a line (happens when a subtitler includes a space after a newline char ie `this is\N two lines` instead of `this is\Ntwo lines`)
                                 // this doesn't actually matter for the SSA/ASS format, however if you were to want to convert from SSA/ASS to a format like SRT, it could lead to spaces preceding the second line, which looks funny 
-                                lines = lines.Select(line => line.TrimStart()).ToList();
+                                lines = [.. lines.Select(line => line.TrimStart())];
 
                                 var item = new SubtitleItem()
                                 {
                                     StartTime = start,
                                     EndTime = end,
-                                    Lines = lines.ToArray(),
+                                    Lines = [.. lines],
                                     // strip formatting by removing anything within curly braces, this will not remove duplicate content however, which can happen when working with signs for example
                                     PlaintextLines = [.. lines.Select(subtitleLine => Regex.Replace(subtitleLine, @"\{.*?\}", string.Empty))]
                                 };
@@ -167,23 +167,20 @@ public sealed class SsaParser : ITextFormatSubtitlesParser
     }
 
     /// <summary>
-    /// Takes an SRT timecode as a string and parses it into a double (in seconds). A SRT timecode reads as follows: 
+    /// Takes an SRT timecode as a string and parses it into a double (in seconds). A SRT timecode reads as follows:
     /// 00:00:20,000
     /// </summary>
     /// <param name="s">The timecode to parse</param>
     /// <returns>The parsed timecode as a TimeSpan instance. If the parsing was unsuccessful, -1 is returned (subtitles should never show)</returns>
-    private int ParseSsaTimecode(string s)
+    private static TimeSpan ParseSsaTimecode(string s)
     {
-        TimeSpan result;
-
-        if (TimeSpan.TryParse(s, out result))
+        if (TimeSpan.TryParse(s, out TimeSpan result))
         {
-            var nbOfMs = (int)result.TotalMilliseconds;
-            return nbOfMs;
+            return result;
         }
         else
         {
-            return -1;
+            return TimeSpan.MaxValue;
         }
     }
 }
