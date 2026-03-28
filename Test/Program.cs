@@ -8,7 +8,7 @@ namespace Test;
 
 class Program
 {
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         var parser = new SubtitlesParser.Classes.Parsers.SubParser();
 
@@ -25,7 +25,7 @@ class Program
                     if (items.Any())
                     {
                         Console.WriteLine("Parsing of file {0}: SUCCESS ({1} items - {2}% corrupted)",
-                            fileName, items.Count, (items.Count(it => it.StartTime <= 0 || it.EndTime <= 0) * 100) / items.Count);
+                            fileName, items.Count, items.Count(it => it.StartTime == TimeSpan.MaxValue || it.EndTime == TimeSpan.MaxValue) * 100 / items.Count);
                         /*foreach (var item in items)
                         {
                             Console.WriteLine(item);
@@ -39,7 +39,6 @@ class Program
                     {
                         Console.WriteLine("Parsing of file {0}: SUCCESS (No items found!)", fileName, items.Count);
                     }
-
                 }
                 catch (Exception ex)
                 {
