@@ -38,7 +38,7 @@ public sealed class TtmlParser : IXmlFormatSubtitlesParser
                 {
                     StartTime = (int)(startTicks),
                     EndTime = (int)(endTicks),
-                    Lines = new List<string>() { text }
+                    Lines = [text]
                 });
             }
             catch (Exception ex)

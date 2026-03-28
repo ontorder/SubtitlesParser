@@ -40,6 +40,8 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
                         .ToList();
 
                 var item = new SubtitleItem();
+                var tempLines = new List<string>();
+                var tempPlainLines = new List<string>();
                 foreach (var line in lines)
                 {
                     if (item.StartTime == 0 && item.EndTime == 0)
@@ -57,15 +59,17 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
                     else
                     {
                         // we found the timecode, now we get the text
-                        item.Lines.Add(line);
+                        tempLines.Add(line);
                         // strip formatting by removing anything within curly braces or angle brackets, which is how SRT styles text according to wikipedia (https://en.wikipedia.org/wiki/SubRip#Formatting)
-                        item.PlaintextLines.Add(Regex.Replace(line, @"\{.*?\}|<.*?>", string.Empty));
+                        tempPlainLines.Add(Regex.Replace(line, @"\{.*?\}|<.*?>", string.Empty));
                     }
                 }
 
                 if ((item.StartTime != 0 || item.EndTime != 0) && item.Lines.Any())
                 {
                     // parsing succeeded
+                    item.Lines = [.. lines];
+                    item.PlaintextLines = [.. tempPlainLines];
                     items.Add(item);
                 }
             }
@@ -86,13 +90,13 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
     }
 
     /// <summary>
-    /// Enumerates the subtitle parts in a srt file based on the standard line break observed between them. 
+    /// Enumerates the subtitle parts in a srt file based on the standard line break observed between them.
     /// A srt subtitle part is in the form:
-    /// 
+    ///
     /// 1
     /// 00:00:20,000 --> 00:00:24,400
     /// Altocumulus clouds occur between six thousand
-    /// 
+    ///
     /// </summary>
     /// <param name="reader">The textreader associated with the srt file</param>
     /// <returns>An IEnumerable(string) object containing all the subtitle parts</returns>

@@ -106,7 +106,7 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
 
     /// <summary>
     /// Parses one line of the .sub file
-    /// 
+    ///
     /// ex:
     /// {0}{180}PIRATES OF THE CARIBBEAN|English subtitlez by tHe.b0dY
     /// </summary>
@@ -124,7 +124,7 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
             var end = (int)(1000 * double.Parse(endTime) / frameRate);
             var text = match.Groups[match.Groups.Count - 1].Value;
             var lines = text.Split(_lineSeparators);
-            var nonEmptyLines = lines.Where(l => !string.IsNullOrEmpty(l)).ToList();
+            var nonEmptyLines = lines.Where(l => !string.IsNullOrEmpty(l)).ToArray();
             var item = new SubtitleItem
             {
                 Lines = nonEmptyLines,
@@ -144,7 +144,7 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
 
     /// <summary>
     /// Tries to extract the frame rate from a subtitle file line.
-    /// 
+    ///
     /// Supported formats are:
     /// - {x}{y}25
     /// - {x}{y}{...}23.976

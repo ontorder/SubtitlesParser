@@ -77,13 +77,12 @@ public sealed class SsaWriter : ISubtitlesWriter
 
         // combine all items in the `Lines` property into a single string, with each item being seperated by an SSA newline (\N)
         // check if we should be including formatting or not (default to use formatting if plaintextlines isn't set)
-        List<string> lines = includeFormatting == false && subtitleItem.PlaintextLines != null ?
+        var lines = includeFormatting == false && subtitleItem.PlaintextLines != null ?
             subtitleItem.PlaintextLines :
             subtitleItem.Lines;
-        fields[9] = lines.Aggregate(string.Empty, (current, line) => current + $"{line}\\N").TrimEnd('\\', 'N');
+        fields[9] = string.Join("\\N", lines);
 
-
-        StringBuilder builder = new StringBuilder(SsaFormatConstants.DIALOGUE_PREFIX);
+        var builder = new StringBuilder(SsaFormatConstants.DIALOGUE_PREFIX);
         return builder.AppendJoin(SsaFormatConstants.SEPARATOR, fields).ToString();
     }
 

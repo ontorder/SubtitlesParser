@@ -72,7 +72,7 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
                             {
                                 StartTime = start,
                                 EndTime = end,
-                                Lines = textLines
+                                Lines = [.. textLines]
                             });
                         }
 
@@ -97,7 +97,7 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
                     {
                         StartTime = lastStart,
                         EndTime = lastEnd,
-                        Lines = textLines
+                        Lines = textLines.ToArray()
                     });
                 }
 

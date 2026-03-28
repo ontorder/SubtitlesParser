@@ -123,9 +123,9 @@ public sealed class SsaParser : ITextFormatSubtitlesParser
                                 {
                                     StartTime = start,
                                     EndTime = end,
-                                    Lines = lines,
+                                    Lines = lines.ToArray(),
                                     // strip formatting by removing anything within curly braces, this will not remove duplicate content however, which can happen when working with signs for example
-                                    PlaintextLines = lines.Select(subtitleLine => Regex.Replace(subtitleLine, @"\{.*?\}", string.Empty)).ToList()
+                                    PlaintextLines = [.. lines.Select(subtitleLine => Regex.Replace(subtitleLine, @"\{.*?\}", string.Empty))]
                                 };
                                 items.Add(item);
                             }
