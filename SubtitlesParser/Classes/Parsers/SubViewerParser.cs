@@ -21,7 +21,7 @@ namespace SubtitlesParser.Classes.Parsers;
 ///
 /// see https://en.wikipedia.org/wiki/SubViewer
 /// </summary>
-public sealed class SubViewerParser : ISubtitlesParser
+public sealed class SubViewerParser : ITextFormatSubtitlesParser
 {
     // Properties ----------------------------------------------------------
 
@@ -34,12 +34,8 @@ public sealed class SubViewerParser : ISubtitlesParser
 
     // Methods -------------------------------------------------------------
 
-    public List<SubtitleItem> ParseStream(Stream subStream, Encoding encoding)
+    public List<SubtitleItem> ParseStream(TextReader reader)
     {
-        // seek the beginning of the stream
-        subStream.Position = 0;
-        var reader = new StreamReader(subStream, encoding, true);
-
         var firstLine = reader.ReadLine();
         if (firstLine == FirstLine)
         {

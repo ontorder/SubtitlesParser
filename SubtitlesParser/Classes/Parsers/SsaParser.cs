@@ -33,31 +33,17 @@ namespace SubtitlesParser.Classes.Parsers;
 /// Format: Marked, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 /// Dialogue: Marked=0,0:00:01.18,0:00:06.85,DefaultVCD, NTP,0000,0000,0000,,{\pos(400,570)}Like an angel with pity on nobody
 /// </summary>
-public sealed class SsaParser : ISubtitlesParser
+public sealed class SsaParser : ITextFormatSubtitlesParser
 {
 
     // Methods ------------------------------------------------------------------
 
-    public List<SubtitleItem> ParseStream(Stream ssaStream, Encoding encoding)
+    public List<SubtitleItem> ParseStream(TextReader ssaStream)
     {
-        // test if stream if readable and seekable (just a check, should be good)
-        if (!ssaStream.CanRead || !ssaStream.CanSeek)
-        {
-            var message = string.Format("Stream must be seekable and readable in a subtitles parser. " +
-                                        "Operation interrupted; isSeekable: {0} - isReadable: {1}",
-                                        ssaStream.CanSeek, ssaStream.CanRead);
-            throw new ArgumentException(message);
-        }
-
-        // seek the beginning of the stream
-        ssaStream.Position = 0;
-
-        var reader = new StreamReader(ssaStream, encoding, true);
-
-        // default wrap style to none if the header section doesn't contain a wrap style definition (very possible since it wasn't present in SSA, only ASS) 
+        // default wrap style to none if the header section doesn't contain a wrap style definition (very possible since it wasn't present in SSA, only ASS)
         SsaWrapStyle wrapStyle = SsaWrapStyle.None;
 
-        var line = reader.ReadLine();
+        var line = ssaStream.ReadLine();
         var lineNumber = 1;
         // read the line until the [Events] section
         while (line != null && line != SsaFormatConstants.EVENT_LINE)
@@ -66,18 +52,18 @@ public sealed class SsaParser : ISubtitlesParser
             {
                 // get the wrap style
                 // the raw string is the second array item after splitting the line at `:` (which we know will be present since it's
-                // included in the `WRAP_STYLE_PREFIX` const), so trim the space off the beginning of that item, and parse that string into the enum 
+                // included in the `WRAP_STYLE_PREFIX` const), so trim the space off the beginning of that item, and parse that string into the enum
                 wrapStyle = line.Split(':')[1].TrimStart().FromString();
             }
 
-            line = reader.ReadLine();
+            line = ssaStream.ReadLine();
             lineNumber++;
         }
 
         if (line != null)
         {
             // we are at the event section
-            var headerLine = reader.ReadLine();
+            var headerLine = ssaStream.ReadLine();
             if (!string.IsNullOrEmpty(headerLine))
             {
                 var columnHeaders = headerLine.Split(SsaFormatConstants.SEPARATOR).Select(head => head.Trim()).ToList();
@@ -90,7 +76,7 @@ public sealed class SsaParser : ISubtitlesParser
                 {
                     var items = new List<SubtitleItem>();
 
-                    line = reader.ReadLine();
+                    line = ssaStream.ReadLine();
                     while (line != null)
                     {
                         if (!string.IsNullOrEmpty(line))
@@ -144,7 +130,7 @@ public sealed class SsaParser : ISubtitlesParser
                                 items.Add(item);
                             }
                         }
-                        line = reader.ReadLine();
+                        line = ssaStream.ReadLine();
                     }
 
                     if (items.Any())

@@ -11,15 +11,15 @@ public sealed class SubParser
 {
     // Properties -----------------------------------------------------------------------
 
-    private readonly Dictionary<SubtitlesFormat, ISubtitlesParser> _subFormatToParser = new Dictionary<SubtitlesFormat, ISubtitlesParser>
+    private readonly Dictionary<SubtitlesFormat, ITextFormatSubtitlesParser> _subFormatToParser = new()
     {
         {SubtitlesFormat.SubRipFormat, new SrtParser()},
         {SubtitlesFormat.MicroDvdFormat, new MicroDvdParser()},
         {SubtitlesFormat.SubViewerFormat, new SubViewerParser()},
         {SubtitlesFormat.SubStationAlphaFormat, new SsaParser()},
-        {SubtitlesFormat.TtmlFormat, new TtmlParser()},
+        // UNDONE {SubtitlesFormat.TtmlFormat, new TtmlParser()},
         {SubtitlesFormat.WebVttFormat, new VttParser()},
-        {SubtitlesFormat.YoutubeXmlFormat, new YtXmlFormatParser()}
+        // UNDONE {SubtitlesFormat.YoutubeXmlFormat, new YtXmlFormatParser()}
     };
 
 
@@ -93,7 +93,7 @@ public sealed class SubParser
     /// <param name="encoding">The stream encoding</param>
     /// <param name="subFormatDictionary">The dictionary of the subtitles parser (ordered) to try</param>
     /// <returns>The corresponding list of SubtitleItem, null if parsing failed</returns>
-    public List<SubtitleItem> ParseStream(Stream stream, Encoding encoding, Dictionary<SubtitlesFormat, ISubtitlesParser> subFormatDictionary)
+    public List<SubtitleItem> ParseStream(Stream stream, Encoding encoding, Dictionary<SubtitlesFormat, ITextFormatSubtitlesParser> subFormatDictionary)
     {
         // test if stream if readable
         if (!stream.CanRead)
@@ -108,16 +108,17 @@ public sealed class SubParser
             seekableStream = StreamHelpers.CopyStream(stream);
             seekableStream.Seek(0, SeekOrigin.Begin);
         }
+        var reader = new StreamReader(seekableStream, encoding);
 
         // if dictionary is null, use the default one
-        subFormatDictionary = subFormatDictionary ?? _subFormatToParser;
+        subFormatDictionary ??= _subFormatToParser;
 
         foreach (var subtitlesParser in subFormatDictionary)
         {
             try
             {
                 var parser = subtitlesParser.Value;
-                var items = parser.ParseStream(seekableStream, encoding);
+                var items = parser.ParseStream(reader);
                 return items;
             }
             catch (Exception ex)

@@ -21,7 +21,7 @@ namespace SubtitlesParser.Classes.Parsers;
 ///
 /// see https://en.wikipedia.org/wiki/MicroDVD
 /// </summary>
-public sealed class MicroDvdParser : ISubtitlesParser
+public sealed class MicroDvdParser : ITextFormatSubtitlesParser
 {
     // Properties -----------------------------------------------------------------------
 
@@ -41,27 +41,14 @@ public sealed class MicroDvdParser : ISubtitlesParser
 
     // Methods -------------------------------------------------------------------------
 
-    public List<SubtitleItem> ParseStream(Stream subStream, Encoding encoding)
+    public List<SubtitleItem> ParseStream(TextReader subStream)
     {
-        // test if stream if readable and seekable (just a check, should be good)
-        if (!subStream.CanRead || !subStream.CanSeek)
-        {
-            var message = string.Format("Stream must be seekable and readable in a subtitles parser. " +
-                               "Operation interrupted; isSeekable: {0} - isReadable: {1}",
-                               subStream.CanSeek, subStream.CanSeek);
-            throw new ArgumentException(message);
-        }
-
-        // seek the beginning of the stream
-        subStream.Position = 0;
-        var reader = new StreamReader(subStream, encoding, true);
-
         var items = new List<SubtitleItem>();
-        var line = reader.ReadLine();
+        var line = subStream.ReadLine();
         // find the first relevant line
         while (line != null && !IsMicroDvdLine(line))
         {
-            line = reader.ReadLine();
+            line = subStream.ReadLine();
         }
 
         if (line != null)
@@ -88,7 +75,7 @@ public sealed class MicroDvdParser : ISubtitlesParser
             }
 
             // parse other lines
-            line = reader.ReadLine();
+            line = subStream.ReadLine();
             while (line != null)
             {
                 if (!string.IsNullOrEmpty(line))
@@ -96,7 +83,7 @@ public sealed class MicroDvdParser : ISubtitlesParser
                     var item = ParseLine(line, frameRate);
                     items.Add(item);
                 }
-                line = reader.ReadLine();
+                line = subStream.ReadLine();
             }
         }
 

@@ -19,29 +19,16 @@ namespace SubtitlesParser.Classes.Parsers;
 /// 00:00:15,000 --> 00:00:18,000
 /// At the left we can see...[12]
 /// </summary>
-public sealed class SrtParser : ISubtitlesParser
+public sealed class SrtParser : ITextFormatSubtitlesParser
 {
     private readonly string[] _delimiters = ["-->", "- >", "->"];
 
     public SrtParser() { }
 
-    public List<SubtitleItem> ParseStream(Stream srtStream, Encoding encoding)
+    public List<SubtitleItem> ParseStream(TextReader srtStream)
     {
-        // test if stream if readable and seekable (just a check, should be good)
-        if (!srtStream.CanRead || !srtStream.CanSeek)
-        {
-            var message = "Stream must be seekable and readable in a subtitles parser. " +
-                $"Operation interrupted; isSeekable: {srtStream.CanSeek} - isReadable: {srtStream.CanSeek}";
-            throw new ArgumentException(message);
-        }
-
-        // seek the beginning of the stream
-        srtStream.Position = 0;
-
-        var reader = new StreamReader(srtStream, encoding, true);
-
         var items = new List<SubtitleItem>();
-        var srtSubParts = GetSrtSubTitleParts(reader).ToList();
+        var srtSubParts = GetSrtSubTitleParts(srtStream).ToList();
         if (srtSubParts.Any())
         {
             foreach (var srtSubPart in srtSubParts)

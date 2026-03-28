@@ -22,13 +22,13 @@ namespace SubtitlesParser.Classes.Parsers;
 /// 00:00:15.000 --> 00:00:18.000
 /// At the left we can see...
 /// </summary>
-public sealed partial class VttParser : ISubtitlesParser
+public sealed partial class VttParser : ITextFormatSubtitlesParser
 {
     private readonly string[] _delimiters = ["-->", "- >", "->"];
 
     public VttParser() { }
 
-    public List<SubtitleItem> ParseStream(TextReader vttStream, Encoding encoding)
+    public List<SubtitleItem> ParseStream(TextReader vttStream)
     {
         var items = new List<SubtitleItem>();
         using var vttSubParts = GetVttSubTitleParts(vttStream).GetEnumerator();

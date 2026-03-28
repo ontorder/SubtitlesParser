@@ -7,12 +7,10 @@ using System.Xml.Linq;
 
 namespace SubtitlesParser.Classes.Parsers;
 
-public sealed class TtmlParser : ISubtitlesParser
+public sealed class TtmlParser : IXmlFormatSubtitlesParser
 {
     public List<SubtitleItem> ParseStream(Stream xmlStream, Encoding encoding)
     {
-        // rewind the stream
-        xmlStream.Position = 0;
         var items = new List<SubtitleItem>();
 
         // parse xml stream

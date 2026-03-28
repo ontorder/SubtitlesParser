@@ -8,12 +8,10 @@ using System.Xml;
 
 namespace SubtitlesParser.Classes.Parsers;
 
-public sealed class YtXmlFormatParser : ISubtitlesParser
+public sealed class YtXmlFormatParser : IXmlFormatSubtitlesParser
 {
     public List<SubtitleItem> ParseStream(Stream xmlStream, Encoding encoding)
     {
-        // rewind the stream
-        xmlStream.Position = 0;
         var items = new List<SubtitleItem>();
 
         // parse xml stream
@@ -41,7 +39,7 @@ public sealed class YtXmlFormatParser : ISubtitlesParser
                         {
                             StartTime = (int)(start * 1000),
                             EndTime = (int)((start + duration) * 1000),
-                            Lines = new List<string>() { text }
+                            Lines = [text]
                         });
                     }
                     catch (Exception ex)
