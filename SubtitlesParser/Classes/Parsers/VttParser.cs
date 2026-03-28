@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 #nullable enable
 namespace SubtitlesParser.Classes.Parsers;
@@ -25,41 +27,76 @@ public sealed partial class VttParser : ITextFormatSubtitlesParser
 {
     public List<SubtitleItem> ParseStream(TextReader vttStream)
     {
-        var items = new List<SubtitleItem>();
-        return items;
-    }
-
-    public async Task<List<SubtitleItem>> ParseStreamAsync(TextReader vttStream)
-    {
         var vttBlocks = new List<SubtitleItem>();
 
-        var vttElement = await GetNextWebvttElementAsync(vttStream);
+        var vttElement = GetNextWebvttElement(vttStream);
         if (vttElement.Discriminator != WebvttItemDiscriminator.WebvttHeader) return [];
 
-        vttElement = await GetNextWebvttElementAsync(vttStream);
+        vttElement = GetNextWebvttElement(vttStream);
         if (vttElement.Discriminator != WebvttItemDiscriminator.Separator) return [];
+
+        var resync = false;
 
         do
         {
-            var vttBlock = new SubtitleItem();
-
-            vttElement = await GetNextWebvttElementAsync(vttStream);
-            if (vttElement.Discriminator == WebvttItemDiscriminator.Id) vttElement = await GetNextWebvttElementAsync(vttStream);
-            if (vttElement.Discriminator != WebvttItemDiscriminator.Timestamp) break;
-            var (tStart, tEnd) = ((TimeSpan, TimeSpan))vttElement.Parsed!;
-            vttBlock.StartTime = tStart;
-            vttBlock.EndTime = tEnd;
-
-            vttElement = await GetNextWebvttElementAsync(vttStream);
-            if (vttElement.Discriminator != WebvttItemDiscriminator.Text) break;
-            vttBlock.Lines = (string[])vttElement.Parsed!;
-            vttBlock.PlaintextLines = vttBlock.Lines;
+            if (resync) TryFindBlockStart(vttStream);
+            (resync, var vttBlock) = ParseVttBlock(vttStream);
+            if (resync) continue;
+            if (vttBlock == null) break;
 
             vttBlocks.Add(vttBlock);
         }
         while (vttElement.Discriminator != WebvttItemDiscriminator.Terminated);
 
         return vttBlocks;
+    }
+
+    public async Task<List<SubtitleItem>> ParseStreamAsync(TextReader vttStream, CancellationToken cancellation)
+    {
+        var vttBlocks = new List<SubtitleItem>();
+
+        var vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.WebvttHeader) return [];
+
+        vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.Separator) return [];
+
+        var resync = false;
+
+        do
+        {
+            if (resync) await TryFindBlockStartAsync(vttStream, cancellation);
+            (resync, var vttBlock) = await ParseVttBlockAsync(vttStream, cancellation);
+            if (resync) continue;
+            if (vttBlock == null) break;
+
+            vttBlocks.Add(vttBlock);
+        }
+        while (vttElement.Discriminator != WebvttItemDiscriminator.Terminated);
+
+        return vttBlocks;
+    }
+
+    public async IAsyncEnumerable<SubtitleItem> ParseStreamAsyncEnum(TextReader vttStream, [EnumeratorCancellation] CancellationToken cancellation)
+    {
+        var vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.WebvttHeader) yield break;
+
+        vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.Separator) yield break;
+
+        var resync = false;
+
+        do
+        {
+            if (resync) await TryFindBlockStartAsync(vttStream, cancellation);
+            (resync, var vttBlock) = await ParseVttBlockAsync(vttStream, cancellation);
+            if (resync) continue;
+            if (vttBlock == null) break;
+
+            yield return vttBlock;
+        }
+        while (vttElement.Discriminator != WebvttItemDiscriminator.Terminated);
     }
 
     /// <summary>
@@ -72,9 +109,9 @@ public sealed partial class VttParser : ITextFormatSubtitlesParser
     ///
     /// The first line is optional, as well as the hours in the time codes.
     /// </summary>
-    private static async ValueTask<(WebvttItemDiscriminator Discriminator, object? Parsed)> GetNextWebvttElementAsync(TextReader reader)
+    private static (WebvttItemDiscriminator Discriminator, object? Parsed) GetNextWebvttElement(TextReader reader)
     {
-        var textLineNoCrLf = await reader.ReadLineAsync();
+        var textLineNoCrLf = reader.ReadLine();
 
         switch (textLineNoCrLf)
         {
@@ -96,9 +133,91 @@ public sealed partial class VttParser : ITextFormatSubtitlesParser
                     return (WebvttItemDiscriminator.WebvttHeader, null);
 
                 var subs = new List<string>(capacity: 1) { textLineNoCrLf };
-                while (await reader.ReadLineAsync() is string sub && false == string.IsNullOrEmpty(sub)) subs.Add(sub);
+                while (reader.ReadLine() is string sub && false == string.IsNullOrEmpty(sub)) subs.Add(sub);
                 return (WebvttItemDiscriminator.Text, subs.ToArray());
         }
+    }
+
+    private static async ValueTask<(WebvttItemDiscriminator Discriminator, object? Parsed)> GetNextWebvttElementAsync(TextReader reader, CancellationToken cancellation)
+    {
+        var textLineNoCrLf = await reader.ReadLineAsync(cancellation);
+
+        switch (textLineNoCrLf)
+        {
+            case null:
+                return (WebvttItemDiscriminator.Terminated, null);
+
+            case { } when string.IsNullOrEmpty(textLineNoCrLf):
+                return (WebvttItemDiscriminator.Separator, null);
+
+            case { } when textLineNoCrLf.All(char.IsNumber):
+                return (WebvttItemDiscriminator.Id, int.Parse(textLineNoCrLf));
+
+            case { } when GetNonStandardWebvttTimecodeRegex().Match(textLineNoCrLf) is { } timestampMatch && timestampMatch.Success:
+                var parsedTimecode = ParseVttTimecode(timestampMatch);
+                return (WebvttItemDiscriminator.Timestamp, parsedTimecode);
+
+            default:
+                if (textLineNoCrLf == "WEBVTT")
+                    return (WebvttItemDiscriminator.WebvttHeader, null);
+
+                var subs = new List<string>(capacity: 1) { textLineNoCrLf };
+                while (await reader.ReadLineAsync(cancellation) is string sub && false == string.IsNullOrEmpty(sub)) subs.Add(sub);
+                return (WebvttItemDiscriminator.Text, subs.ToArray());
+        }
+    }
+
+    [GeneratedRegex(@"^(?<H1>\d*):?(?<M1>\d\d):(?<S1>\d\d)[,\.]?(?<f1>\d*) -.?> (?<H2>\d*):?(?<M2>\d\d):(?<S2>\d\d)[,\.]?(?<f2>\d*)$", RegexOptions.Compiled)]
+    private static partial Regex GetNonStandardWebvttTimecodeRegex();
+
+    private static (bool Resync, SubtitleItem? VttBlock) ParseVttBlock(TextReader vttStream)
+    {
+        var vttBlock = new SubtitleItem();
+
+        var vttElement = GetNextWebvttElement(vttStream);
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Terminated) return (Resync: false, VttBlock: null);
+
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Id)
+            vttElement = GetNextWebvttElement(vttStream);
+
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Terminated) return (Resync: false, VttBlock: null);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.Timestamp) return (Resync: true, VttBlock: null);
+        var (tStart, tEnd) = ((TimeSpan, TimeSpan))vttElement.Parsed!;
+        vttBlock.StartTime = tStart;
+        vttBlock.EndTime = tEnd;
+
+        vttElement = GetNextWebvttElement(vttStream);
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Terminated) return (Resync: false, VttBlock: null);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.Text) return (Resync: true, VttBlock: null);
+        vttBlock.Lines = (string[])vttElement.Parsed!;
+        vttBlock.PlaintextLines = vttBlock.Lines;
+
+        return (Resync: false, vttBlock);
+    }
+
+    private static async ValueTask<(bool Resync, SubtitleItem? VttBlock)> ParseVttBlockAsync(TextReader vttStream, CancellationToken cancellation)
+    {
+        var vttBlock = new SubtitleItem();
+
+        var vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Terminated) return (Resync: false, VttBlock: null);
+
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Id)
+            vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Terminated) return (Resync: false, VttBlock: null);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.Timestamp) return (Resync: true, VttBlock: null);
+        var (tStart, tEnd) = ((TimeSpan, TimeSpan))vttElement.Parsed!;
+        vttBlock.StartTime = tStart;
+        vttBlock.EndTime = tEnd;
+
+        vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
+        if (vttElement.Discriminator == WebvttItemDiscriminator.Terminated) return (Resync: false, VttBlock: null);
+        if (vttElement.Discriminator != WebvttItemDiscriminator.Text) return (Resync: true, VttBlock: null);
+        vttBlock.Lines = (string[])vttElement.Parsed!;
+        vttBlock.PlaintextLines = vttBlock.Lines;
+
+        return (Resync: false, vttBlock);
     }
 
     /// <summary>
@@ -126,8 +245,23 @@ public sealed partial class VttParser : ITextFormatSubtitlesParser
         return (tStart, tEnd);
     }
 
-    [GeneratedRegex(@"^(?<H1>\d*):?(?<M1>\d\d):(?<S1>\d\d)[,\.]?(?<f1>\d*) -.?> (?<H2>\d*):?(?<M2>\d\d):(?<S2>\d\d)[,\.]?(?<f2>\d*)$", RegexOptions.Compiled)]
-    private static partial Regex GetNonStandardWebvttTimecodeRegex();
+    private static void TryFindBlockStart(TextReader vttStream)
+    {
+        for (;
+            GetNextWebvttElement(vttStream).Discriminator
+                is not (WebvttItemDiscriminator.Separator or WebvttItemDiscriminator.Text or WebvttItemDiscriminator.Terminated)
+            ;)
+            ;
+    }
+
+    private static async ValueTask TryFindBlockStartAsync(TextReader vttStream, CancellationToken cancellation)
+    {
+        for (;
+            (await GetNextWebvttElementAsync(vttStream, cancellation)).Discriminator
+                is not (WebvttItemDiscriminator.Separator or WebvttItemDiscriminator.Text or WebvttItemDiscriminator.Terminated)
+            ;)
+            ;
+    }
 
     private enum WebvttItemDiscriminator
     {
