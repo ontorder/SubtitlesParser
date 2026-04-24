@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\SubtitlesParser\SubtitlesParser.csproj" />
+        <ProjectReference Include="..\SubtitlesParser\AlexPoint.SubtitlesParser.csproj" />
     </ItemGroup>
 
     <ItemGroup>
