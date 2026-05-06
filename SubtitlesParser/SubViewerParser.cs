@@ -33,7 +33,7 @@ public sealed class SubViewerParser : ITextFormatSubtitlesParser
 
     // Methods -------------------------------------------------------------
 
-    public List<SubtitleItem> ParseStream(TextReader reader)
+    public List<SubtitleItem> ParseStream(TextReader reader, int hintCapacityBytes = 0)
     {
         var firstLine = reader.ReadLine();
         if (firstLine == FirstLine)

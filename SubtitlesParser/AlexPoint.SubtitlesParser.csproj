@@ -8,7 +8,7 @@
         <StartupObject />
         <PackageId>SubtitlesParser</PackageId>
         <AssemblyName>AlexPoint.SubtitlesParser</AssemblyName>
-        <Version>2.0.0</Version>
+        <Version>2.1.0</Version>
         <Title>Subtitles parser</Title>
         <Authors>AlexPoint</Authors>
         <PackageProjectUrl>https://github.com/AlexPoint/SubtitlesParser</PackageProjectUrl>
@@ -17,7 +17,7 @@
         <Description>Universal subtitles parser</Description>
         <ReleaseNotes>rewrite</ReleaseNotes>
         <Tags>subtitles parser</Tags>
-        <PackageReleaseNotes>assembly should be author.product</PackageReleaseNotes>
+        <PackageReleaseNotes>blocks capacity hint</PackageReleaseNotes>
     </PropertyGroup>
 
 </Project>

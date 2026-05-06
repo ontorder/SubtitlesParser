@@ -36,7 +36,7 @@ public sealed class SsaParser : ITextFormatSubtitlesParser
 
     // Methods ------------------------------------------------------------------
 
-    public List<SubtitleItem> ParseStream(TextReader ssaStream)
+    public List<SubtitleItem> ParseStream(TextReader ssaStream, int hintCapacityBytes = 0)
     {
         // default wrap style to none if the header section doesn't contain a wrap style definition (very possible since it wasn't present in SSA, only ASS)
         SsaWrapStyle wrapStyle = SsaWrapStyle.None;

@@ -25,9 +25,12 @@ namespace AlexPoint.SubtitlesParser;
 /// </summary>
 public sealed partial class VttParser : ITextFormatSubtitlesParser
 {
-    public List<SubtitleItem> ParseStream(TextReader vttStream)
+    private const int AverageBlockSize = 150;
+
+    public List<SubtitleItem> ParseStream(TextReader vttStream, int hintCapacityBytes = 0)
     {
-        var vttBlocks = new List<SubtitleItem>();
+        int capacity = hintCapacityBytes > 0 ? hintCapacityBytes / AverageBlockSize : 0;
+        var vttBlocks = new List<SubtitleItem>(capacity);
 
         var vttElement = GetNextWebvttElement(vttStream);
         if (vttElement.Discriminator != WebvttItemDiscriminator.WebvttHeader) return [];
@@ -51,9 +54,10 @@ public sealed partial class VttParser : ITextFormatSubtitlesParser
         return vttBlocks;
     }
 
-    public async Task<List<SubtitleItem>> ParseStreamAsync(TextReader vttStream, CancellationToken cancellation)
+    public async Task<List<SubtitleItem>> ParseStreamAsync(TextReader vttStream, int hintCapacityBytes, CancellationToken cancellation)
     {
-        var vttBlocks = new List<SubtitleItem>();
+        int capacity = hintCapacityBytes > 0 ? hintCapacityBytes / AverageBlockSize : 0;
+        var vttBlocks = new List<SubtitleItem>(capacity);
 
         var vttElement = await GetNextWebvttElementAsync(vttStream, cancellation);
         if (vttElement.Discriminator != WebvttItemDiscriminator.WebvttHeader) return [];

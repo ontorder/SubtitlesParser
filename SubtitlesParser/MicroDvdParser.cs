@@ -24,7 +24,7 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
 {
     // Properties -----------------------------------------------------------------------
 
-    private readonly float defaultFrameRate = 25;
+    private readonly float _defaultFrameRate = 25;
     private readonly char[] _lineSeparators = ['|'];
 
 
@@ -33,14 +33,12 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
     public MicroDvdParser() { }
 
     public MicroDvdParser(float defaultFrameRate)
-    {
-        this.defaultFrameRate = defaultFrameRate;
-    }
+        => _defaultFrameRate = defaultFrameRate;
 
 
     // Methods -------------------------------------------------------------------------
 
-    public List<SubtitleItem> ParseStream(TextReader subStream)
+    public List<SubtitleItem> ParseStream(TextReader subStream, int hintCapacityBytes = 0)
     {
         var items = new List<SubtitleItem>();
         var line = subStream.ReadLine();
@@ -54,15 +52,15 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
         {
             float frameRate;
             // try to extract the framerate from the first line
-            var firstItem = ParseLine(line, defaultFrameRate);
+            var firstItem = ParseLine(line, _defaultFrameRate);
             if (firstItem.Lines != null && firstItem.Lines.Any())
             {
                 var success = TryExtractFrameRate(firstItem.Lines[0], out frameRate);
                 if (!success)
                 {
                     Console.WriteLine("Couldn't extract frame rate of sub file with first line {0}. " +
-                                      "We use the default frame rate: {1}", line, defaultFrameRate);
-                    frameRate = defaultFrameRate;
+                                      "We use the default frame rate: {1}", line, _defaultFrameRate);
+                    frameRate = _defaultFrameRate;
 
                     // treat it as a regular line
                     items.Add(firstItem);
@@ -70,7 +68,7 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
             }
             else
             {
-                frameRate = defaultFrameRate;
+                frameRate = _defaultFrameRate;
             }
 
             // parse other lines
@@ -155,12 +153,12 @@ public sealed class MicroDvdParser : ITextFormatSubtitlesParser
         if (!string.IsNullOrEmpty(text))
         {
             var success = float.TryParse(text, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture,
-                                         out frameRate);
+                out frameRate);
             return success;
         }
         else
         {
-            frameRate = defaultFrameRate;
+            frameRate = _defaultFrameRate;
             return false;
         }
     }

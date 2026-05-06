@@ -13,7 +13,7 @@ public interface ITextFormatSubtitlesParser
     /// </summary>
     /// <param name="stream">The subtitles file stream to parse</param>
     /// <returns>The corresponding list of SubtitleItems</returns>
-    List<SubtitleItem> ParseStream(TextReader stream);
+    List<SubtitleItem> ParseStream(TextReader stream, int hintCapacityBytes = 0);
 
     // /// <summary>
     // /// Parses a subtitles file stream in a list of SubtitleItem

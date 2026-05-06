@@ -23,9 +23,7 @@ public sealed class SrtParser : ITextFormatSubtitlesParser
 {
     private readonly string[] _delimiters = ["-->", "- >", "->"];
 
-    public SrtParser() { }
-
-    public List<SubtitleItem> ParseStream(TextReader srtStream)
+    public List<SubtitleItem> ParseStream(TextReader srtStream, int hintCapacityBytes = 0)
     {
         var items = new List<SubtitleItem>();
         var srtSubParts = GetSrtSubTitleParts(srtStream).ToList();
