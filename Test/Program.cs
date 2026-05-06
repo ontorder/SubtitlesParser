@@ -10,7 +10,7 @@ class Program
 {
     static async Task Main()
     {
-        var parser = new SubtitlesParser.Classes.Parsers.SubParser();
+        var parser = new AlexPoint.SubtitlesParser.SubParser();
 
         var allFiles = BrowseTestSubtitlesFiles();
         foreach (var file in allFiles)

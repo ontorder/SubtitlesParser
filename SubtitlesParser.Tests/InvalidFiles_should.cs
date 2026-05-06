@@ -1,4 +1,4 @@
-﻿using SubtitlesParser.Classes.Parsers;
+﻿using AlexPoint.SubtitlesParser;
 using System;
 using System.IO;
 using System.Text;

@@ -1,4 +1,4 @@
-﻿namespace SubtitlesParser.Classes.Utils;
+﻿namespace AlexPoint.SubtitlesParser;
 
 public static class SsaFormatConstants
 {

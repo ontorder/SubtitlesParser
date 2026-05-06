@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace SubtitlesParser.Classes.Parsers;
+namespace AlexPoint.SubtitlesParser;
 
 /// <summary>
 /// Interface specifying the required method for a SubParser.

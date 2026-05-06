@@ -1,4 +1,4 @@
-﻿namespace SubtitlesParser.Classes.Utils;
+﻿namespace AlexPoint.SubtitlesParser;
 
 /// <summary>
 /// Represents a Wrap Style used by Advanced SSA

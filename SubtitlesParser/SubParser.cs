@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SubtitlesParser.Classes.Parsers;
+namespace AlexPoint.SubtitlesParser;
 
 public sealed class SubParser
 {

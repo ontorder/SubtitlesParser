@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SubtitlesParser.Classes.Utils;
 
-namespace SubtitlesParser.Classes.Writers;
+namespace AlexPoint.SubtitlesParser;
 
 /// <summary>
 /// A writer for the Substation Alpha subtitles format.

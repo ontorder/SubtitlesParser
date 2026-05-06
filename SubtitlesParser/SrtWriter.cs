@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SubtitlesParser.Classes.Writers;
+namespace AlexPoint.SubtitlesParser;
 
 /// <summary>
 /// A writer for the SubRip subtitles format.

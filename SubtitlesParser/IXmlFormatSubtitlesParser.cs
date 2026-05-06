@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace SubtitlesParser.Classes.Parsers;
+namespace AlexPoint.SubtitlesParser;
 
 public interface IXmlFormatSubtitlesParser
 {

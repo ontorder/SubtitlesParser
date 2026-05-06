@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SubtitlesParser.Classes;
+namespace AlexPoint.SubtitlesParser;
 
 public sealed class SubtitlesFormat
 {

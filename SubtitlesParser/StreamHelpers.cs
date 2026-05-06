@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace SubtitlesParser.Classes;
+namespace AlexPoint.SubtitlesParser;
 
 static class StreamHelpers
 {

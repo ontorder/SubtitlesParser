@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace SubtitlesParser.Classes.Writers;
+namespace AlexPoint.SubtitlesParser;
 
 /// <summary>
 /// Interface specifying the required method for a SubWriter

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 #nullable enable
-namespace SubtitlesParser.Classes.Parsers;
+namespace AlexPoint.SubtitlesParser;
 
 /// <summary>
 /// Parser for the .vtt subtitles files. Does not handle formatting tags within the text; that has to be parsed separately.

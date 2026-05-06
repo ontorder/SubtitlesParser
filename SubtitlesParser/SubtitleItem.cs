@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SubtitlesParser.Classes;
+namespace AlexPoint.SubtitlesParser;
 
 public sealed class SubtitleItem
 {
